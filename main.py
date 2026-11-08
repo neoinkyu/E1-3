@@ -177,10 +177,11 @@ def load_filters(filters_data):
 
 
 # JSON 분석 모드
-def json_mode():
+def json_mode(file_path=None):
     print("\n=== data.json 분석 모드 ===")
 
-    file_path = Path(__file__).with_name("data.json")
+    if file_path is None:
+        file_path = Path(__file__).with_name("data.json")
 
     try:
         with open(file_path, "r", encoding="utf-8") as file:
