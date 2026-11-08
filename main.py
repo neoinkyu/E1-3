@@ -65,6 +65,56 @@ def classify(score_a, score_b):
         return "B"
 
 
+
+# MAC 연산 평균 시간 측정
+def benchmark_mac(pattern, filter_matrix):
+    measurements = 10
+    repeats = 100
+    times = []
+
+    # 측정 전 예비 실행
+    for _ in range(10):
+        mac(pattern, filter_matrix)
+
+    # 10회 구간 측정
+    for _ in range(measurements):
+        start = time.perf_counter_ns()
+
+        for _ in range(repeats):
+            mac(pattern, filter_matrix)
+
+        end = time.perf_counter_ns()
+
+        # 1회 MAC 연산당 평균 시간(ms)
+        average_ms = (end - start) / repeats / 1_000_000
+        times.append(average_ms)
+
+    return sum(times) / len(times)
+
+
+# 배열 크기별 성능 분석
+def performance_analysis():
+    print("\n=== [3] 성능 분석 ===")
+    print("측정 기준: 10개 구간 × 구간당 100회 연산 (총 1,000회)")
+    print("측정값: MAC 연산 1회당 평균 실행 시간")
+    print(f"{'크기':<12}{'평균 시간(ms)':<18}{'연산 횟수':>10}")
+    print("-" * 40)
+
+    for size in (3, 5, 13, 25):
+        pattern = [[1.0] * size for _ in range(size)]
+        filter_matrix = [[1.0] * size for _ in range(size)]
+
+        average_ms = benchmark_mac(pattern, filter_matrix)
+        operations = size * size
+
+        print(
+            f"{size}x{size:<9}"
+            f"{average_ms:<18.6f}"
+            f"{operations:>10}"
+        )
+
+
+
 # 사용자 입력 모드
 def user_mode():
     print("\n=== [1] 필터 입력 ===")
@@ -90,20 +140,13 @@ def user_mode():
     print(f"B 점수: {score_b}")
     print(f"판정: {result}")
 
-    # MAC 연산 10회 반복 측정
-    repeat = 10
+    # 필터별 MAC 연산 시간 측정
+    time_a = benchmark_mac(pattern, filter_a)
+    time_b = benchmark_mac(pattern, filter_b)
 
-    start = time.perf_counter()
+    average_ms = (time_a + time_b) / 2
 
-    for _ in range(repeat):
-        mac(pattern, filter_a)
-        mac(pattern, filter_b)
-
-    end = time.perf_counter()
-
-    average_ms = (end - start) * 1000 / repeat
-
-    print(f"연산 시간(평균/{repeat}회): {average_ms:.6f} ms")
+    print(f"연산 시간(필터당 평균): {average_ms:.6f} ms")
 
 
 
@@ -279,8 +322,11 @@ def json_mode(file_path=None):
             fail_cases.append((case_id, reason))
             print(f"FAIL - {reason}")
 
+    # 크기별 성능 분석
+    performance_analysis()
+
     # 최종 결과 요약
-    print("\n=== [3] 결과 요약 ===")
+    print("\n=== [4] 결과 요약 ===")
 
     total = len(patterns_data)
     fail_count = len(fail_cases)
