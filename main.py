@@ -39,6 +39,18 @@ def generate_pattern(size, shape):
     return matrix
 
 
+
+# 2차원 배열을 1차원 배열로 변환
+def flatten_matrix(matrix):
+    flat = []
+
+    for row in matrix:
+        for value in row:
+            flat.append(value)
+
+    return flat
+
+
 # MAC 연산
 def mac(pattern, filter_matrix, show_steps=False):
     score = 0
@@ -56,6 +68,18 @@ def mac(pattern, filter_matrix, show_steps=False):
                 )
 
     return score
+
+
+
+# 1차원 배열 기반 MAC 연산
+def mac_flat(pattern_flat, filter_flat):
+    score = 0
+
+    for i in range(len(pattern_flat)):
+        score += pattern_flat[i] * filter_flat[i]
+
+    return score
+
 
 
 # 3x3 배열 입력
@@ -100,30 +124,31 @@ def classify(score_a, score_b):
 
 
 
-# MAC 연산 평균 시간 측정
-def benchmark_mac(pattern, filter_matrix):
+
+# 공통 MAC 연산 성능 측정
+def benchmark_mac(pattern, filter_matrix, mac_function=mac):
     measurements = 10
     repeats = 100
     times = []
 
-    # 측정 전 예비 실행
+    # 예비 실행
     for _ in range(10):
-        mac(pattern, filter_matrix)
+        mac_function(pattern, filter_matrix)
 
-    # 10회 구간 측정
+    # 10개 구간에서 각각 100회 측정
     for _ in range(measurements):
         start = time.perf_counter_ns()
 
         for _ in range(repeats):
-            mac(pattern, filter_matrix)
+            mac_function(pattern, filter_matrix)
 
         end = time.perf_counter_ns()
 
-        # 1회 MAC 연산당 평균 시간(ms)
         average_ms = (end - start) / repeats / 1_000_000
         times.append(average_ms)
 
     return sum(times) / len(times)
+
 
 
 # 배열 크기별 성능 분석
@@ -131,7 +156,7 @@ def performance_analysis():
     print("\n=== [3] 성능 분석 ===")
     print("측정 기준: 10개 구간 × 구간당 100회 연산 (총 1,000회)")
     print("측정값: MAC 연산 1회당 평균 실행 시간")
-    print(f"{'크기':<12}{'평균 시간(ms)':<18}{'연산 횟수':>10}")
+    print(f"{'크기':<12}{'평균 시간(ms)':<14}{'연산 횟수':>8}")
     print("-" * 40)
 
     for size in (3, 5, 13, 25):
@@ -432,6 +457,78 @@ def pattern_generator_mode():
 
 
 
+# 2차원 / 1차원 MAC 성능 비교
+def optimization_mode():
+    print("\n=== 1차원 배열 최적화 성능 비교 ===")
+    print("측정 기준: 10개 구간 x 구간당 100회 (총 1,000회)")
+    print("배열 변환 시간은 측정에서 제외")
+    print("개선율: 양수는 1차원 방식이 빠름, 음수는 느림")
+
+    print()
+    print(
+        f"{'크기':<6}"
+        f"{'2차원(ms)':>13}"
+        f"{'1차원(ms)':>11}"
+        f"{'개선율(%)':>11}"
+        f"{'검증':>5}"
+    )
+    print("-" * 60)
+
+    for size in (3, 5, 13, 25):
+        # 동일한 입력 데이터 생성
+        pattern = generate_pattern(size, "Cross")
+        filter_matrix = generate_pattern(size, "Cross")
+
+        # 1차원 배열로 변환 (시간 측정 전)
+        flat_pattern = flatten_matrix(pattern)
+        flat_filter = flatten_matrix(filter_matrix)
+
+        # 2차원과 1차원 MAC 결과 비교
+        score_2d = mac(pattern, filter_matrix)
+        score_1d = mac_flat(flat_pattern, flat_filter)
+
+        is_correct = abs(score_2d - score_1d) < 1e-9
+
+        # 두 방식에 동일한 반복 횟수 적용
+        time_2d = benchmark_mac(pattern, filter_matrix)
+        time_1d = benchmark_mac(
+            flat_pattern, flat_filter, mac_flat
+        )
+
+        # 개선율 계산
+        improvement = (time_2d - time_1d) / time_2d * 100
+
+        status = "PASS" if is_correct else "FAIL"
+        size_label = f"{size}x{size}"
+
+        print(
+            f"{size_label:<9}"
+            f"{time_2d:>13.6f}"
+            f"{time_1d:>13.6f}"
+            f"{improvement:>+12.2f}%"
+            f"{status:>9}"
+        )
+
+    print("\n=== X 패턴 계산 결과 추가 검증 ===")
+
+    for size in (3, 5, 13, 25):
+        pattern = generate_pattern(size, "X")
+        flat_pattern = flatten_matrix(pattern)
+
+        score_2d = mac(pattern, pattern)
+        score_1d = mac_flat(flat_pattern, flat_pattern)
+
+        result = (
+            "PASS"
+            if abs(score_2d - score_1d) < 1e-9
+            else "FAIL"
+        )
+
+        print(f"{size}x{size}: {result}")
+
+
+
+
 def main():
     print("=== Mini NPU Simulator ===")
 
@@ -440,6 +537,7 @@ def main():
         print("1. 사용자 입력 (3x3)")
         print("2. data.json 분석")
         print("3. 패턴 자동 생성기")
+        print("4. 1차원 배열 최적화 비교")
 
         choice = input("선택: ").strip()
 
@@ -455,11 +553,16 @@ def main():
             pattern_generator_mode()
             break
 
+        elif choice == "4":
+            optimization_mode()
+            break
+
         else:
-            print("입력 오류: 1, 2 또는 3을 입력하세요.")
+            print("입력 오류: 1~4 중 선택하세요.")
 
 
 if __name__ == "__main__":
     main()
+
 
 
