@@ -223,9 +223,15 @@ def user_mode():
 
     result = classify(score_a, score_b)
 
+    # 모드 1: 내부 동점 판정을 사용자 친화적인 문자열로 변환
+    if result == "UNDECIDED":
+        display_result = "판정 불가"
+    else:
+        display_result = result
+
     print(f"A 점수: {score_a}")
     print(f"B 점수: {score_b}")
-    print(f"판정: {result}")
+    print(f"판정: {display_result}")
 
     # 필터별 MAC 연산 시간 측정
     time_a = benchmark_mac(pattern, filter_a)
