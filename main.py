@@ -5,6 +5,40 @@ import re
 from pathlib import Path
 
 
+
+# Cross / X 패턴 자동 생성
+def generate_pattern(size, shape):
+    if size < 3:
+        raise ValueError("배열 크기는 3 이상이어야 합니다.")
+
+    if shape not in ("Cross", "X"):
+        raise ValueError("패턴 종류는 Cross 또는 X여야 합니다.")
+
+    matrix = []
+
+    # 짝수 크기에서는 가운데 두 행/열을 사용
+    if size % 2 == 0:
+        centers = (size // 2 - 1, size // 2)
+    else:
+        centers = (size // 2,)
+
+    for i in range(size):
+        row = []
+
+        for j in range(size):
+            if shape == "Cross":
+                value = 1 if i in centers or j in centers else 0
+
+            else:
+                value = 1 if i == j or i + j == size - 1 else 0
+
+            row.append(value)
+
+        matrix.append(row)
+
+    return matrix
+
+
 # MAC 연산
 def mac(pattern, filter_matrix, show_steps=False):
     score = 0
@@ -101,8 +135,8 @@ def performance_analysis():
     print("-" * 40)
 
     for size in (3, 5, 13, 25):
-        pattern = [[1.0] * size for _ in range(size)]
-        filter_matrix = [[1.0] * size for _ in range(size)]
+        pattern = generate_pattern(size, "Cross")
+        filter_matrix = generate_pattern(size, "Cross")
 
         average_ms = benchmark_mac(pattern, filter_matrix)
         operations = size * size
@@ -127,7 +161,35 @@ def user_mode():
     print("필터 B:", filter_b)
 
     print("\n=== [2] 패턴 입력 ===")
-    pattern = input_matrix("입력 패턴")
+
+    while True:
+        print("1. 직접 입력")
+        print("2. 자동 생성")
+        method = input("선택: ").strip()
+
+        if method == "1":
+            pattern = input_matrix("입력 패턴")
+            break
+
+        elif method == "2":
+            shape = input("패턴 선택 (1: Cross, 2: X): ").strip()
+
+            if shape == "1":
+                pattern = generate_pattern(3, "Cross")
+                break
+
+            elif shape == "2":
+                pattern = generate_pattern(3, "X")
+                break
+
+            print("입력 오류: 1 또는 2를 선택하세요.")
+
+        else:
+            print("입력 오류: 1 또는 2를 선택하세요.")
+
+    print("\n입력 패턴:")
+    for row in pattern:
+        print(*row)
 
     print("\n=== [3] MAC 연산 결과 ===")
 
@@ -341,6 +403,34 @@ def json_mode(file_path=None):
             print(f"- {case_id}: {reason}")
 
 
+# 패턴 생성기 모드
+def pattern_generator_mode():
+    print("\n=== 패턴 자동 생성기 ===")
+
+    while True:
+        try:
+            size = int(input("배열 크기 N 입력 (3 이상): "))
+
+            if size < 3:
+                print("입력 오류: 3 이상의 정수를 입력하세요.")
+                continue
+
+            break
+
+        except ValueError:
+            print("입력 오류: 정수를 입력하세요.")
+
+    for shape in ("Cross", "X"):
+        matrix = generate_pattern(size, shape)
+
+        print(f"\n[{shape} 패턴: {size}x{size}]")
+
+        for row in matrix:
+            print(" ".join(str(value) for value in row))
+
+    print("\n패턴 생성 완료")
+
+
 
 def main():
     print("=== Mini NPU Simulator ===")
@@ -349,6 +439,7 @@ def main():
         print("\n[모드 선택]")
         print("1. 사용자 입력 (3x3)")
         print("2. data.json 분석")
+        print("3. 패턴 자동 생성기")
 
         choice = input("선택: ").strip()
 
@@ -360,8 +451,12 @@ def main():
             json_mode()
             break
 
+        elif choice == "3":
+            pattern_generator_mode()
+            break
+
         else:
-            print("입력 오류: 1 또는 2를 입력하세요.")
+            print("입력 오류: 1, 2 또는 3을 입력하세요.")
 
 
 if __name__ == "__main__":
