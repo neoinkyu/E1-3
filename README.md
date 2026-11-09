@@ -32,7 +32,7 @@
 
 | 구분 | 내용 |
 |---|---|
-| 프로그래밍 언어 | Python 3.8 이상 |
+| 프로그래밍 언어 | Python 3.12 이상 |
 | 개발 도구 | Visual Studio Code |
 | 버전 관리 | Git / GitHub |
 | 외부 라이브러리 | 사용하지 않음 |
@@ -51,9 +51,25 @@
 
 ### 2.3 실행 방법
 
-프로젝트 폴더에서 터미널을 열고 다음 명령어를 실행한다.
+#### Python 및 Git 설치 (설치가 안 되어 있는 경우, 윈도우 환경 가정)
 
-`python main.py`
+```bash
+winget install -e --id Python.Python.3.14
+winget install -e --id Git.Git
+```
+
+#### GitHub 저장소 복제
+
+```bash
+git clone https://github.com/neoinkyu/E1-3.git
+cd E1-3
+```
+
+#### 프로그램 실행
+
+```bash
+python main.py
+```
 
 프로그램은 네 가지 실행 모드를 제공한다.
 
